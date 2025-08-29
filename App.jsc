@@ -1,0 +1,542 @@
+import React, { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button.jsx'
+import { Input } from '@/components/ui/input.jsx'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.jsx'
+import { Badge } from '@/components/ui/badge.jsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx'
+import {
+  Users,
+  Building,
+  DollarSign,
+  TrendingUp,
+  Eye,
+  Edit,
+  Trash2,
+  Search,
+  Home,
+  Settings,
+  LogOut,
+  UserCheck,
+  UserX,
+  CheckCircle,
+  XCircle,
+  Clock
+} from 'lucide-react'
+import './App.css'
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [stats, setStats] = useState(null)
+  const [users, setUsers] = useState([])
+  const [properties, setProperties] = useState([])
+  const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // بيانات وهمية للإحصائيات
+  const mockStats = {
+    users: {
+      total: 156,
+      active: 142,
+      sellers: 45,
+      buyers: 97,
+      new_last_month: 23
+    },
+    properties: {
+      total: 89,
+      active: 76,
+      for_sale: 52,
+      for_rent: 24,
+      new_last_month: 12
+    },
+    transactions: {
+      total: 34,
+      total_commission: 2850000,
+      paid_commission: 1920000,
+      pending_commission: 930000
+    },
+    offers: {
+      total: 67,
+      pending: 23,
+      accepted: 18
+    }
+  }
+
+  // بيانات وهمية للمستخدمين
+  const mockUsers = [
+    {
+      id: 1,
+      username: 'أحمد محمد',
+      email: 'ahmed@example.com',
+      user_type: 'عارض',
+      is_active: true,
+      created_at: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: 2,
+      username: 'فاطمة علي',
+      email: 'fatima@example.com',
+      user_type: 'مشتري',
+      is_active: true,
+      created_at: '2024-01-20T14:20:00Z'
+    },
+    {
+      id: 3,
+      username: 'محمد عثمان',
+      email: 'mohamed@example.com',
+      user_type: 'عارض',
+      is_active: false,
+      created_at: '2024-02-01T09:15:00Z'
+    }
+  ]
+
+  // بيانات وهمية للعقارات
+  const mockProperties = [
+    {
+      id: 1,
+      title: 'شقة فاخرة في الخرطوم',
+      property_type: 'شقة',
+      status: 'للبيع',
+      price: 45000000,
+      address_state: 'الخرطوم',
+      address_city: 'الرياض',
+      is_active: true,
+      created_at: '2024-01-25T11:00:00Z'
+    },
+    {
+      id: 2,
+      title: 'منزل عائلي في أم درمان',
+      property_type: 'منزل',
+      status: 'للإيجار',
+      price: 3500000,
+      address_state: 'أم درمان',
+      address_city: 'الثورة',
+      is_active: true,
+      created_at: '2024-02-10T16:30:00Z'
+    }
+  ]
+
+  // بيانات وهمية للمعاملات
+  const mockTransactions = [
+    {
+      id: 1,
+      transaction_type: 'بيع',
+      final_price: 45000000,
+      commission_amount: 1125000,
+      payment_status: 'مدفوع',
+      transaction_date: '2024-02-15T10:00:00Z'
+    },
+    {
+      id: 2,
+      transaction_type: 'إيجار',
+      final_price: 3500000,
+      commission_amount: 52500,
+      payment_status: 'معلق',
+      transaction_date: '2024-02-20T14:30:00Z'
+    }
+  ]
+
+  useEffect(() => {
+    // محاكاة تحميل البيانات
+    setTimeout(() => {
+      setStats(mockStats)
+      setUsers(mockUsers)
+      setProperties(mockProperties)
+      setTransactions(mockTransactions)
+      setLoading(false)
+    }, 1000)
+  }, [])
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ar-SD', {
+      style: 'currency',
+      currency: 'SDG',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('ar-SD')
+  }
+
+  const StatCard = ({ title, value, icon: Icon, trend, color = "blue" }) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className={`h-4 w-4 text-${color}-600`} />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {trend && (
+          <p className="text-xs text-muted-foreground">
+            {trend}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل لوحة التحكم...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-3">
+              <Home className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">لوحة تحكم المسؤول</h1>
+                <p className="text-sm text-gray-500">مامبو للعقارات السودانية</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 ml-2" />
+                الإعدادات
+              </Button>
+              <Button variant="outline" size="sm">
+                <LogOut className="h-4 w-4 ml-2" />
+                تسجيل الخروج
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard">لوحة المعلومات</TabsTrigger>
+            <TabsTrigger value="users">إدارة المستخدمين</TabsTrigger>
+            <TabsTrigger value="properties">إدارة العقارات</TabsTrigger>
+            <TabsTrigger value="transactions">إدارة المعاملات</TabsTrigger>
+          </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="إجمالي المستخدمين"
+                value={stats?.users?.total || 0}
+                icon={Users}
+                trend={`+${stats?.users?.new_last_month || 0} هذا الشهر`}
+                color="blue"
+              />
+              <StatCard
+                title="العقارات النشطة"
+                value={stats?.properties?.active || 0}
+                icon={Building}
+                trend={`من أصل ${stats?.properties?.total || 0} عقار`}
+                color="green"
+              />
+              <StatCard
+                title="إجمالي العمولة"
+                value={formatCurrency(stats?.transactions?.total_commission || 0)}
+                icon={DollarSign}
+                trend={`${formatCurrency(stats?.transactions?.pending_commission || 0)} معلق`}
+                color="yellow"
+              />
+              <StatCard
+                title="المعاملات"
+                value={stats?.transactions?.total || 0}
+                icon={TrendingUp}
+                trend="معاملة مكتملة"
+                color="purple"
+              />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>توزيع المستخدمين</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>العارضون</span>
+                      <Badge variant="secondary">{stats?.users?.sellers || 0}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>المشترون</span>
+                      <Badge variant="secondary">{stats?.users?.buyers || 0}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>المستخدمون النشطون</span>
+                      <Badge variant="default">{stats?.users?.active || 0}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>توزيع العقارات</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>للبيع</span>
+                      <Badge variant="secondary">{stats?.properties?.for_sale || 0}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>للإيجار</span>
+                      <Badge variant="secondary">{stats?.properties?.for_rent || 0}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>العقارات النشطة</span>
+                      <Badge variant="default">{stats?.properties?.active || 0}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">إدارة المستخدمين</h2>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="البحث في المستخدمين..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pr-10"
+                  />
+                </div>
+                <Button>إضافة مستخدم</Button>
+              </div>
+            </div>
+
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>المستخدم</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>تاريخ التسجيل</TableHead>
+                    <TableHead>الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{user.username}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.user_type === 'عارض' ? 'default' : 'secondary'}>
+                          {user.user_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.is_active ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            <UserCheck className="h-3 w-3 ml-1" />
+                            نشط
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-red-100 text-red-800">
+                            <UserX className="h-3 w-3 ml-1" />
+                            غير نشط
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* Properties Tab */}
+          <TabsContent value="properties" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">إدارة العقارات</h2>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="البحث في العقارات..."
+                    className="pr-10"
+                  />
+                </div>
+                <Button>إضافة عقار</Button>
+              </div>
+            </div>
+
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>العقار</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>السعر</TableHead>
+                    <TableHead>الموقع</TableHead>
+                    <TableHead>التفعيل</TableHead>
+                    <TableHead>الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {properties.map((property) => (
+                    <TableRow key={property.id}>
+                      <TableCell>
+                        <div className="font-medium">{property.title}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{property.property_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={property.status === 'للبيع' ? 'default' : 'secondary'}>
+                          {property.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatCurrency(property.price)}</TableCell>
+                      <TableCell>{property.address_state} - {property.address_city}</TableCell>
+                      <TableCell>
+                        {property.is_active ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            <CheckCircle className="h-3 w-3 ml-1" />
+                            نشط
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-red-100 text-red-800">
+                            <XCircle className="h-3 w-3 ml-1" />
+                            غير نشط
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* Transactions Tab */}
+          <TabsContent value="transactions" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">إدارة المعاملات</h2>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="البحث في المعاملات..."
+                    className="pr-10"
+                  />
+                </div>
+                <Button>إضافة معاملة</Button>
+              </div>
+            </div>
+
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>المعاملة</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>المبلغ النهائي</TableHead>
+                    <TableHead>العمولة</TableHead>
+                    <TableHead>حالة الدفع</TableHead>
+                    <TableHead>تاريخ المعاملة</TableHead>
+                    <TableHead>الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>
+                        <div className="font-medium">معاملة #{transaction.id}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={transaction.transaction_type === 'بيع' ? 'default' : 'secondary'}>
+                          {transaction.transaction_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatCurrency(transaction.final_price)}</TableCell>
+                      <TableCell>{formatCurrency(transaction.commission_amount)}</TableCell>
+                      <TableCell>
+                        {transaction.payment_status === 'مدفوع' ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            <CheckCircle className="h-3 w-3 ml-1" />
+                            مدفوع
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                            <Clock className="h-3 w-3 ml-1" />
+                            معلق
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  )
+}
+
+export default App
